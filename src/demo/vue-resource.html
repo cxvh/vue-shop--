@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue-resource@1.5.1"></script>
+</head>
+<body>
+<div id="app">
+    <a @click="get">get请求</a>
+    <a @click="post">post请求</a>
+    <a @click="jsonp">jsonp请求</a>
+    <a @click="http">http请求</a>
+    <p>{{msg}}</p>
+</div>
+<script>
+    new Vue({
+        el:'#app',
+        data:{
+            msg:""
+        },
+        mounted:function(){
+            //全局拦截器
+            Vue.http.interceptors.push(function(request,next){
+                console.log('request...')
+                next(function(response){
+                    console.log('response...')
+                    return response;
+                })
+            });
+        },
+        http:{
+            //全局配置
+            root:'http://localhost/'
+        },
+        methods:{
+            get:function(){
+                //this.$http==Vue.http
+                //this.$http.get('../../package.json',{
+                this.$http.get('package.json',{
+                    params:{userId:"101"},
+                    headers:{token:"abcd"}
+                }).then(res=>{
+                    console.log(res.data)
+                    this.msg='get OK';
+                }).catch(error=>{
+                    console.log(error)
+                    this.msg='get Error';
+                });
+            },
+            post:function(){
+                this.$http.post('../../package.json',{
+                    params:{userId:"102"},
+                    headers:{access_token:"abcd"}
+                }).then(res=>{
+                    console.log(res.data)
+                    this.msg='post OK';
+                }).catch(error=>{
+                    console.log(error)
+                    this.msg='post Error';
+                });
+            },
+            jsonp:function(){
+                this.$http.jsonp('http://suggestion.baidu.com/su',{
+                    params:{wd:parseInt(Math.random()*10)},
+                    jsonp:"cb"
+                }).then(res=>{
+                    console.log(res.data)
+                    this.msg='jsonp OK';
+                }).catch(error=>{
+                    console.log(error)
+                    this.msg='jsonp Error';
+                });
+            },
+            http:function(){
+                this.$http({
+                    url:'package.json',
+                    params:{userId:"103"},
+                    headers:{token:"3321"},
+                    timeout:5,//5秒
+                    before:function(){
+                        console.log('正在发送请求')
+                    }
+                }).then(res=>{
+                    console.log(res.data)
+                    this.msg='http OK';
+                }).catch(error=>{
+                    console.log(error)
+                    this.msg='http Error';
+                });
+            }
+        }
+    });
+</script>
+</body>
+</html>

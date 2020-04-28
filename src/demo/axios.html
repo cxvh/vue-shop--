@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+    <script src="/node_modules/axios/dist/axios.js"></script>
+</head>
+<body>
+<div id="app">
+    <a @click="get">get请求</a>
+    <a @click="post">post请求</a>
+    <a @click="jsonp">jsonp请求</a>
+    <a @click="http">http请求</a>
+    <p>{{msg}}</p>
+</div>
+<script>
+    new Vue({
+        el:'#app',
+        data:{
+            msg:""
+        },
+        mounted:function(){
+            axios.interceptors.request.use(function(config){
+                console.log('request init...')
+
+                return config;
+            });
+            axios.interceptors.response.use(function(response){
+                console.log('response init...')
+
+                return response;
+            });
+            
+            axios.jsonp = (url,params) => {
+                if(!url){return Promise.reject('url error：'+url);}//===>if(!url){return reject('url error：'+url)};
+                return new Promise((resolve,reject) => {
+                    //if(!url){return reject('url error：'+url)};
+                    params!==void 0&&params.jsonp===void 0&&(params.jsonp="callback");
+                    params.callback===void 0&&(params.callback=params.jsonp);
+                    url+='?';
+                    for(var i in params){
+                        if(i==="callback"){
+                            continue;
+                        }
+                        if(i==="jsonp"){
+                            url+="&"+params[i]+"="+params.callback;
+                            continue;
+                        }
+                        url+="&"+i+"="+params[i];
+                    }
+                    window[params.callback]=(result) => {
+                        resolve(result)
+                    }
+                    var JSONP=document.createElement("script");
+                    JSONP.type="text/javascript";
+                    JSONP.src=url;
+                    document.getElementsByTagName("head")[0].appendChild(JSONP);
+                    JSONP.onload=function(){
+                        document.getElementsByTagName("head")[0].removeChild(JSONP);
+                        window[params.callback]=void 0;
+                    }
+                    JSONP.onerror=function(e){
+                        document.getElementsByTagName("head")[0].removeChild(JSONP);
+                        window[params.callback]=void 0;
+                        reject(e);
+                    }
+                })
+            }
+        },
+        methods:{
+            get:function(){
+                axios.get('/package.json',{
+                    params:{userId:"101"},
+                    headers:{token:"abcd"}
+                }).then(res=>{
+                    console.log(res.data)
+                    this.msg='get OK';
+                }).catch(error=>{
+                    console.log(error)
+                    this.msg='get Error';
+                });
+            },
+            post:function(){
+                axios.post('../../package.json',{
+                    params:{userId:"102"},
+                    headers:{access_token:"abcd"}
+                }).then(res=>{
+                    console.log(res.data)
+                    this.msg='post OK';
+                }).catch(error=>{
+                    console.log(error)
+                    this.msg='post Error';
+                });
+            },
+            jsonp:function(){
+                axios.jsonp('http://suggestion.baidu.com/su',{wd:parseInt(Math.random()*10+1),jsonp:"cb"}).then(res=>{
+                    console.log(res.s);
+                    this.msg='jsonp OK';
+                }).catch(error=>{
+                    console.log(error)
+                    this.msg='jsonp Error';
+                });
+            },
+            http:function(){
+                axios({
+                    url:'/package.json',
+                    method:"get",//get支持params:{userId:"103"}不支持：data:{userId:"103"}
+                    params:{userId:"103"},
+                    //method:"post",//post支持params:{userId:"103"}或者data:{userId:"103"}
+                    //data:{userId:"103"},
+                    headers:{token:"3321"},
+                    timeout:5,//5秒
+                    before:function(){
+                        console.log('正在发送请求')
+                    }
+                }).then(res=>{
+                    console.log(res.data)
+                    this.msg='http OK';
+                }).catch(error=>{
+                    console.log(error)
+                    this.msg='http Error';
+                });
+            }
+        }
+    });
+</script>
+</body>
+</html>
