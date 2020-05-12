@@ -1,3 +1,4 @@
+#残品未做完
 # shop
 
 > myshop
